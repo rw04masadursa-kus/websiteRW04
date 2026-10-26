@@ -12,6 +12,7 @@ interface Props {
   onOpenTracking: () => void;
   onOpenSurat: () => void;
   onOpenAuth: () => void;
+  onOpenAdminLogin: () => void;
   onOpenApiSync: () => void;
   activeView: 'landing' | 'admin';
   setActiveView: (view: 'landing' | 'admin') => void;
@@ -23,6 +24,7 @@ export const Navbar: React.FC<Props> = ({
   onOpenTracking,
   onOpenSurat,
   onOpenAuth,
+  onOpenAdminLogin,
   onOpenApiSync,
   activeView,
   setActiveView
@@ -122,16 +124,25 @@ export const Navbar: React.FC<Props> = ({
             >
               Lacak Tiket
             </button>
-            {currentUser.role === 'admin' && (
+            {currentUser.role === 'admin' ? (
               <button
-                onClick={() => setActiveView('admin')}
+                onClick={() => setActiveView(activeView === 'admin' ? 'landing' : 'admin')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm ${
                   activeView === 'admin'
                     ? 'bg-teal-600 text-white'
                     : 'bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 hover:bg-teal-100 border border-teal-200 dark:border-teal-800'
                 }`}
               >
-                <Shield className="w-3.5 h-3.5" /> Dashboard Admin
+                <Shield className="w-3.5 h-3.5" /> {activeView === 'admin' ? 'Kembali ke Beranda' : 'Dashboard Admin'}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenAdminLogin}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-teal-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all"
+                title="Buka form login admin via URL: ?page=admin-login"
+              >
+                <Shield className="w-3.5 h-3.5 text-teal-600" />
+                <span>Login Admin</span>
               </button>
             )}
           </nav>
@@ -238,26 +249,43 @@ export const Navbar: React.FC<Props> = ({
               )}
             </div>
 
-            {/* Quick Role Switcher Pill */}
-            <button
-              onClick={handleRoleToggle}
-              title="Klik untuk beralih antara Role Warga dan Admin Pengurus"
-              className="hidden sm:flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-400 text-xs font-semibold bg-white dark:bg-slate-800 shadow-sm transition-all"
-            >
-              <img
-                src={currentUser.avatar}
-                alt="Avatar"
-                className="w-6 h-6 rounded-full object-cover border border-slate-300 dark:border-slate-600"
-              />
-              <div className="text-left leading-none">
-                <span className="text-[10px] text-slate-400 block font-normal">
-                  Role: <strong className="text-slate-800 dark:text-slate-200 capitalize">{currentUser.role}</strong>
-                </span>
-                <span className="text-teal-700 dark:text-teal-300 font-bold text-xs truncate max-w-[90px] block">
-                  {currentUser.role === 'admin' ? 'Pengurus RW' : 'Warga RT 04'}
-                </span>
+            {/* Quick Role & Login Pill */}
+            {currentUser.role === 'admin' ? (
+              <div className="hidden sm:flex items-center gap-2 pl-2 pr-2 py-1.5 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/60 shadow-sm">
+                <img
+                  src={currentUser.avatar}
+                  alt="Avatar"
+                  className="w-6 h-6 rounded-full object-cover border border-teal-400"
+                />
+                <div className="text-left leading-none">
+                  <span className="text-[9px] text-teal-700 dark:text-teal-300 block font-bold uppercase">
+                    Admin Aktif
+                  </span>
+                  <span className="text-slate-800 dark:text-slate-200 font-bold text-xs truncate max-w-[100px] block">
+                    Pengurus RW
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    StorageService.logout();
+                    setActiveView('landing');
+                  }}
+                  title="Keluar dari akun admin"
+                  className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </button>
+            ) : (
+              <button
+                onClick={onOpenAdminLogin}
+                title="Buka form login admin via URL: ?page=admin-login"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100 text-teal-800 text-xs font-bold shadow-sm transition-all"
+              >
+                <Shield className="w-3.5 h-3.5 text-teal-600" />
+                <span>Masuk Admin</span>
+              </button>
+            )}
 
             {/* Buat Pengaduan Primary Action Button */}
             <button
@@ -340,14 +368,51 @@ export const Navbar: React.FC<Props> = ({
               API Integrasi Satu Data Kelurahan
             </button>
             
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-3">
-              <span className="text-xs text-slate-500">Ganti Akun &amp; Role:</span>
+            {currentUser.role === 'admin' ? (
               <button
-                onClick={handleRoleToggle}
-                className="px-3 py-1.5 rounded-lg bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 text-xs font-bold"
+                onClick={() => {
+                  setActiveView(activeView === 'admin' ? 'landing' : 'admin');
+                  setShowMobileMenu(false);
+                }}
+                className="block w-full text-left py-2 px-3 rounded-lg bg-teal-50 dark:bg-teal-950 font-bold text-teal-800 dark:text-teal-300"
               >
-                Switch ke {currentUser.role === 'warga' ? 'Admin Pengurus' : 'Warga RT'}
+                🛡️ {activeView === 'admin' ? 'Kembali ke Beranda Warga' : 'Buka Dashboard Admin RW'}
               </button>
+            ) : (
+              <button
+                onClick={() => {
+                  onOpenAdminLogin();
+                  setShowMobileMenu(false);
+                }}
+                className="block w-full text-left py-2 px-3 rounded-lg bg-teal-50 dark:bg-teal-950 font-bold text-teal-800 dark:text-teal-300"
+              >
+                🔒 Login Admin Pengurus (?page=admin-login)
+              </button>
+            )}
+            
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-3">
+              <span className="text-xs text-slate-500">Status Akun:</span>
+              {currentUser.role === 'admin' ? (
+                <button
+                  onClick={() => {
+                    StorageService.logout();
+                    setShowMobileMenu(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-800 text-xs font-bold"
+                >
+                  Keluar Admin
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    onOpenAdminLogin();
+                    setShowMobileMenu(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-bold"
+                >
+                  Masuk Admin
+                </button>
+              )}
             </div>
           </div>
         )}

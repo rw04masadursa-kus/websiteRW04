@@ -1,17 +1,43 @@
-import React, { useState } from 'react';
-import { GALERI_DATA } from '../data/initialData';
-import { GaleriFoto } from '../types';
-import { Camera, Calendar, MapPin, X, ZoomIn, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { GaleriFoto, UserSession } from '../types';
+import { StorageService } from '../services/storageService';
+import { triggerGlobalToast } from './NotificationToast';
+import { Camera, Calendar, MapPin, X, ZoomIn, Plus, Trash2 } from 'lucide-react';
 
-export const GaleriKegiatanSection: React.FC = () => {
+interface Props {
+  currentUser?: UserSession;
+  onOpenTambahGaleri?: () => void;
+}
+
+export const GaleriKegiatanSection: React.FC<Props> = ({ currentUser, onOpenTambahGaleri }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [activePhoto, setActivePhoto] = useState<GaleriFoto | null>(null);
+  const [photos, setPhotos] = useState<GaleriFoto[]>(() => StorageService.getGaleriList());
+
+  useEffect(() => {
+    const unsub = StorageService.subscribe(() => {
+      setPhotos(StorageService.getGaleriList());
+    });
+    return () => unsub();
+  }, []);
 
   const categories = ['Semua', 'PKK', 'Jumantik', 'Dasawisma', 'Gotong Royong', 'Peringatan'];
 
   const filteredPhotos = selectedCategory === 'Semua'
-    ? GALERI_DATA
-    : GALERI_DATA.filter(p => p.kategori === selectedCategory);
+    ? photos
+    : photos.filter(p => p.kategori === selectedCategory);
+
+  const handleDeletePhoto = (e: React.MouseEvent, id: string, judul: string) => {
+    e.stopPropagation();
+    if (confirm(`Hapus dokumentasi foto "${judul}"?`)) {
+      StorageService.deleteGaleri(id);
+      triggerGlobalToast({
+        tipe: 'info',
+        judul: 'Foto Galeri Dihapus',
+        pesan: `Foto "${judul}" telah dihapus oleh Admin.`
+      });
+    }
+  };
 
   return (
     <section id="galeri-kegiatan" className="py-20 bg-white transition-colors border-b border-slate-100">
@@ -32,21 +58,33 @@ export const GaleriKegiatanSection: React.FC = () => {
             </p>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {categories.map((cat) => (
+          {/* Filter Pills & Admin Action */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Admin Add Photo Button */}
+            {currentUser?.role === 'admin' && onOpenTambahGaleri && (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  selectedCategory === cat
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+                onClick={onOpenTambahGaleri}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition-all"
               >
-                {cat}
+                <Plus className="w-3.5 h-3.5" /> Tambah Foto (Admin)
               </button>
-            ))}
+            )}
           </div>
         </div>
 
@@ -56,7 +94,7 @@ export const GaleriKegiatanSection: React.FC = () => {
             <div
               key={photo.id}
               onClick={() => setActivePhoto(photo)}
-              className="group cursor-pointer card-white-glow rounded-3xl overflow-hidden"
+              className="group cursor-pointer card-white-glow rounded-3xl overflow-hidden relative"
             >
               <div className="relative h-56 w-full overflow-hidden bg-slate-100">
                 <img
@@ -70,8 +108,20 @@ export const GaleriKegiatanSection: React.FC = () => {
                   {photo.kategori}
                 </span>
 
-                <div className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-slate-900 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                  <ZoomIn className="w-4 h-4" />
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {/* Admin Delete Action */}
+                  {currentUser?.role === 'admin' && (
+                    <button
+                      onClick={(e) => handleDeletePhoto(e, photo.id, photo.judul)}
+                      title="Hapus Foto Ini"
+                      className="p-1.5 rounded-full bg-rose-600/90 text-white hover:bg-rose-700 transition-colors shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <div className="p-2 rounded-full bg-white/90 text-slate-900 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                    <ZoomIn className="w-4 h-4" />
+                  </div>
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3 text-white">

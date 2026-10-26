@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
+import { PengumumanBanner } from './components/PengumumanBanner';
 import { StatsSection } from './components/StatsSection';
 import { PerangkatRWSection } from './components/PerangkatRWSection';
 import { GaleriKegiatanSection } from './components/GaleriKegiatanSection';
@@ -11,11 +12,17 @@ import { TrackingPengaduanModal } from './components/TrackingPengaduanModal';
 import { SuratPengantarModal } from './components/SuratPengantarModal';
 import { ApiSyncModal } from './components/ApiSyncModal';
 import { AuthModal } from './components/AuthModal';
+import { AdminLoginModal } from './components/AdminLoginModal';
+import { 
+  ModalTambahKegiatan, 
+  ModalTambahGaleri, 
+  ModalTambahPengumuman 
+} from './components/AdminContentModals';
 import { NotificationToaster } from './components/NotificationToast';
 import { Footer } from './components/Footer';
 import { StorageService } from './services/storageService';
 import { Pengaduan, UserSession } from './types';
-import { MessageSquarePlus, Search, Shield } from 'lucide-react';
+import { MessageSquarePlus } from 'lucide-react';
 
 export default function App() {
   const [pengaduanList, setPengaduanList] = useState<Pengaduan[]>(() => StorageService.getPengaduanList());
@@ -29,8 +36,14 @@ export default function App() {
   const [trackingId, setTrackingId] = useState('');
   const [isApiSyncOpen, setIsApiSyncOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  
+  // Admin Login and Content Modals
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isTambahKegiatanOpen, setIsTambahKegiatanOpen] = useState(false);
+  const [isTambahGaleriOpen, setIsTambahGaleriOpen] = useState(false);
+  const [isTambahPengumumanOpen, setIsTambahPengumumanOpen] = useState(false);
 
-  // Initialize theme
+  // Initialize theme & reactive storage subscription
   useEffect(() => {
     const theme = StorageService.getTheme();
     if (theme === 'dark') {
@@ -39,13 +52,33 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
 
-    // Subscribe to reactive storage changes
     const unsubscribe = StorageService.subscribe(() => {
       setPengaduanList(StorageService.getPengaduanList());
       setCurrentUser(StorageService.getUserSession());
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // URL-based Admin Login Detection (?page=admin-login or ?login=admin)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const page = params.get('page');
+      const login = params.get('login');
+      const admin = params.get('admin');
+
+      if (page === 'admin-login' || login === 'admin' || admin === 'true' || page === 'admin') {
+        const currentSession = StorageService.getUserSession();
+        if (currentSession.role === 'admin' && currentSession.isAuthenticated) {
+          setActiveView('admin');
+        } else {
+          setIsAdminLoginOpen(true);
+        }
+      }
+    } catch (e) {
+      console.warn('URL parsing check:', e);
+    }
   }, []);
 
   const handleSelectReport = (item: Pengaduan) => {
@@ -81,6 +114,7 @@ export default function App() {
         }}
         onOpenSurat={() => setIsSuratOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
         onOpenApiSync={() => setIsApiSyncOpen(true)}
         activeView={activeView}
         setActiveView={setActiveView}
@@ -105,6 +139,9 @@ export default function App() {
             setActiveView('landing');
           }}
           onOpenApiSync={() => setIsApiSyncOpen(true)}
+          onOpenTambahKegiatan={() => setIsTambahKegiatanOpen(true)}
+          onOpenTambahGaleri={() => setIsTambahGaleriOpen(true)}
+          onOpenTambahPengumuman={() => setIsTambahPengumumanOpen(true)}
         />
       ) : (
         <main>
@@ -121,6 +158,12 @@ export default function App() {
             selesaiPengaduan={selesaiCount}
           />
 
+          {/* Dynamic Broadcast Announcements (Siaran Warta RW) */}
+          <PengumumanBanner
+            currentUser={currentUser}
+            onOpenTambahPengumuman={() => setIsTambahPengumumanOpen(true)}
+          />
+
           {/* Live Visual Stats */}
           <StatsSection />
 
@@ -131,11 +174,17 @@ export default function App() {
             onOpenForm={() => setIsFormOpen(true)}
           />
 
-          {/* Perangkat RW: PKK, Dasawisma, Jumantik, Posyandu */}
-          <PerangkatRWSection />
+          {/* Perangkat RW: PKK, Dasawisma, Jumantik, Posyandu (Dynamic Admin CRUD) */}
+          <PerangkatRWSection
+            currentUser={currentUser}
+            onOpenTambahKegiatan={() => setIsTambahKegiatanOpen(true)}
+          />
 
-          {/* Galeri Kegiatan Warga */}
-          <GaleriKegiatanSection />
+          {/* Galeri Kegiatan Warga (Dynamic Admin CRUD) */}
+          <GaleriKegiatanSection
+            currentUser={currentUser}
+            onOpenTambahGaleri={() => setIsTambahGaleriOpen(true)}
+          />
         </main>
       )}
 
@@ -209,6 +258,35 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Admin Login Modal (Accessible via URL ?page=admin-login or Nav button) */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        onSuccess={(session) => {
+          setCurrentUser(session);
+          setActiveView('admin');
+        }}
+      />
+
+      {/* Admin Dynamic Content Creation Modals */}
+      <ModalTambahKegiatan
+        isOpen={isTambahKegiatanOpen}
+        onClose={() => setIsTambahKegiatanOpen(false)}
+        onSuccess={() => {}}
+      />
+
+      <ModalTambahGaleri
+        isOpen={isTambahGaleriOpen}
+        onClose={() => setIsTambahGaleriOpen(false)}
+        onSuccess={() => {}}
+      />
+
+      <ModalTambahPengumuman
+        isOpen={isTambahPengumumanOpen}
+        onClose={() => setIsTambahPengumumanOpen(false)}
+        onSuccess={() => {}}
+      />
 
     </div>
   );

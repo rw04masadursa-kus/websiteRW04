@@ -65,7 +65,7 @@ export interface KegiatanRW {
   lokasi: string;
   deskripsi: string;
   status: 'Rutin' | 'Mendatang' | 'Selesai';
-  iconName: string;
+  iconName?: string;
 }
 
 export interface GaleriFoto {
@@ -76,6 +76,16 @@ export interface GaleriFoto {
   lokasi: string;
   gambarUrl: string;
   deskripsi: string;
+}
+
+export interface PengumumanRW {
+  id: string;
+  judul: string;
+  isi: string;
+  tanggal: string;
+  prioritas: 'darurat' | 'penting' | 'info';
+  author: string;
+  linkTerkait?: string;
 }
 
 export interface UserSession {

@@ -1,4 +1,4 @@
-import { Pengaduan, PerangkatRW, KegiatanRW, GaleriFoto, WhatsAppNotificationLog } from '../types';
+import { Pengaduan, PerangkatRW, KegiatanRW, GaleriFoto, WhatsAppNotificationLog, PengumumanRW } from '../types';
 
 export const PROFIL_RW04 = {
   nama: 'Rukun Warga 04',
@@ -406,6 +406,25 @@ export const GALERI_DATA: GaleriFoto[] = [
     lokasi: 'Lapangan Olahraga RW 04 Malaka Sari',
     gambarUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80',
     deskripsi: 'Ratusan warga dari RT 01 hingga RT 15 tumpah ruah mengikuti jalan sehat, senam poco-poco, dan pentas seni pemuda.'
+  }
+];
+
+export const INITIAL_PENGUMUMAN: PengumumanRW[] = [
+  {
+    id: 'PGM-01',
+    judul: 'Kerja Bakti Akbar Serentak Seluruh RT Jelang Musim Hujan',
+    isi: 'Dihimbau kepada seluruh warga RT 01 s/d RT 15 untuk berpartisipasi dalam kerja bakti normalisasi saluran drainase pada Minggu pagi pukul 06.30 WIB.',
+    tanggal: '26 Oktober 2026',
+    prioritas: 'penting',
+    author: 'H. Bambang Sugiarto (Ketua RW 04)'
+  },
+  {
+    id: 'PGM-02',
+    judul: 'Jadwal Fogging Fokus & Pembagian Abate Puskesmas',
+    isi: 'Kader Jumantik bersama Puskesmas Malaka Sari akan mengadakan fogging fokus dan pembagian bubuk abate di wilayah RT 02 dan RT 09.',
+    tanggal: '24 Oktober 2026',
+    prioritas: 'info',
+    author: 'Ibu Hj. Nuryani (Koordinator Jumantik)'
   }
 ];
 

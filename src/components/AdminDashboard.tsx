@@ -6,7 +6,8 @@ import { triggerGlobalToast } from './NotificationToast';
 import { 
   ShieldCheck, AlertTriangle, Clock, CheckCircle2, XCircle, Search, 
   Filter, MessageCircle, ExternalLink, Download, Printer, BarChart3, 
-  MapPin, UserCheck, Layers, RefreshCw, Send, Check, CloudCheck, Eye
+  MapPin, UserCheck, Layers, RefreshCw, Send, Check, CloudCheck, Eye,
+  Calendar, Camera, Megaphone, Plus, Trash2
 } from 'lucide-react';
 
 interface Props {
@@ -15,6 +16,9 @@ interface Props {
   onSelectReportToMap?: (item: Pengaduan) => void;
   onSwitchToWarga: () => void;
   onOpenApiSync: () => void;
+  onOpenTambahKegiatan?: () => void;
+  onOpenTambahGaleri?: () => void;
+  onOpenTambahPengumuman?: () => void;
 }
 
 export const AdminDashboard: React.FC<Props> = ({
@@ -22,9 +26,12 @@ export const AdminDashboard: React.FC<Props> = ({
   currentUser,
   onSelectReportToMap,
   onSwitchToWarga,
-  onOpenApiSync
+  onOpenApiSync,
+  onOpenTambahKegiatan,
+  onOpenTambahGaleri,
+  onOpenTambahPengumuman
 }) => {
-  const [activeTab, setActiveTab] = useState<'laporan' | 'analitik' | 'whatsapp_logs' | 'sync'>('laporan');
+  const [activeTab, setActiveTab] = useState<'laporan' | 'analitik' | 'whatsapp_logs' | 'konten'>('laporan');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterRT, setFilterRT] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -245,6 +252,18 @@ export const AdminDashboard: React.FC<Props> = ({
           >
             <MessageCircle className="w-4 h-4" />
             Log WhatsApp Terkirim ({waLogs.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('konten')}
+            className={`pb-3 text-sm font-semibold border-b-2 flex items-center gap-2 transition-all ${
+              activeTab === 'konten'
+                ? 'border-teal-600 text-teal-600 dark:text-teal-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Megaphone className="w-4 h-4" />
+            Kelola Konten Landing Page (Dinamis)
           </button>
         </div>
 
@@ -629,6 +648,202 @@ export const AdminDashboard: React.FC<Props> = ({
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {/* TAB 4: KELOLA KONTEN LANDING PAGE (DINAMIS - ADMIN ONLY) */}
+        {activeTab === 'konten' && (
+          <div className="space-y-8 animate-in fade-in">
+            {/* Information Banner */}
+            <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 text-teal-900">
+                <ShieldCheck className="w-5 h-5 text-teal-700 shrink-0" />
+                <span>
+                  <strong>Hak Akses Khusus Admin Pengurus RW:</strong> Seluruh perubahan di panel ini akan langsung sinkron dan tampil di halaman publik (Landing Page) bagi seluruh warga.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={onSwitchToWarga}
+                  className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold transition-all shadow-xs"
+                >
+                  Pratinjau di Landing Page
+                </button>
+              </div>
+            </div>
+
+            {/* Sub-Section 1: Warta & Pengumuman RW */}
+            <div className="card-white-glow rounded-3xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-teal-600" />
+                    Warta &amp; Pengumuman Siaran RW
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Pemberitahuan darurat, edaran kelurahan, dan jadwal bantuan sosial
+                  </p>
+                </div>
+                {onOpenTambahPengumuman && (
+                  <button
+                    onClick={onOpenTambahPengumuman}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Siarkan Pengumuman Baru
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {StorageService.getPengumumanList().map((item) => (
+                  <div key={item.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-teal-100 text-teal-800">
+                          {item.prioritas}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Hapus pengumuman "${item.judul}"?`)) {
+                              StorageService.deletePengumuman(item.id);
+                              triggerGlobalToast({
+                                tipe: 'info',
+                                judul: 'Pengumuman Dihapus',
+                                pesan: `Warta "${item.judul}" telah dihapus.`
+                              });
+                            }
+                          }}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{item.judul}</h4>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">{item.isi}</p>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-200 text-[11px] text-slate-400 flex justify-between">
+                      <span>{item.author}</span>
+                      <span>{item.tanggal}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sub-Section 2: Agenda Kegiatan Perangkat RW */}
+            <div className="card-white-glow rounded-3xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-teal-600" />
+                    Agenda Kegiatan PKK, Dasawisma &amp; Jumantik
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Jadwal rutin pertemuan bulanan, PSN Jumat pagi, dan posyandu balita
+                  </p>
+                </div>
+                {onOpenTambahKegiatan && (
+                  <button
+                    onClick={onOpenTambahKegiatan}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Tambah Agenda Kegiatan
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {StorageService.getKegiatanList().map((item) => (
+                  <div key={item.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                          {item.divisi}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Hapus kegiatan "${item.judul}"?`)) {
+                              StorageService.deleteKegiatan(item.id);
+                              triggerGlobalToast({
+                                tipe: 'info',
+                                judul: 'Kegiatan Dihapus',
+                                pesan: `Agenda "${item.judul}" telah dihapus.`
+                              });
+                            }
+                          }}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{item.judul}</h4>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">{item.deskripsi}</p>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-200 text-[11px] text-slate-500 space-y-0.5">
+                      <div>Jadwal: {item.jadwal}</div>
+                      <div>Lokasi: {item.lokasi}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sub-Section 3: Galeri Foto Warga */}
+            <div className="card-white-glow rounded-3xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-teal-600" />
+                    Galeri Foto Dokumentasi Kegiatan Warga
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Dokumentasi gotong royong, peringatan HUT RI, posyandu, dan kerja bakti
+                  </p>
+                </div>
+                {onOpenTambahGaleri && (
+                  <button
+                    onClick={onOpenTambahGaleri}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Unggah Foto Galeri Baru
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {StorageService.getGaleriList().map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 flex flex-col justify-between">
+                    <div className="relative h-32 w-full">
+                      <img src={item.gambarUrl} alt={item.judul} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => {
+                          if (confirm(`Hapus foto "${item.judul}"?`)) {
+                            StorageService.deleteGaleri(item.id);
+                            triggerGlobalToast({
+                              tipe: 'info',
+                              judul: 'Foto Dihapus',
+                              pesan: `Foto "${item.judul}" telah dihapus.`
+                            });
+                          }
+                        }}
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 shadow-sm"
+                        title="Hapus Foto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="p-3">
+                      <span className="text-[10px] font-bold text-teal-700">{item.kategori}</span>
+                      <h5 className="font-bold text-xs text-slate-900 truncate mt-0.5">{item.judul}</h5>
+                      <span className="text-[10px] text-slate-400 block mt-1">{item.tanggal}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 

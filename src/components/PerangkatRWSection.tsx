@@ -1,16 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   HeartHandshake, ShieldCheck, ClipboardList, Activity, 
-  Shield, Calendar, MapPin, Users, Phone, ArrowUpRight, CheckCircle2 
+  Shield, Calendar, MapPin, Users, Phone, CheckCircle2, Plus, Trash2 
 } from 'lucide-react';
-import { KEGIATAN_DATA, PERANGKAT_DATA } from '../data/initialData';
+import { PERANGKAT_DATA } from '../data/initialData';
+import { KegiatanRW, UserSession } from '../types';
+import { StorageService } from '../services/storageService';
+import { triggerGlobalToast } from './NotificationToast';
 
-export const PerangkatRWSection: React.FC = () => {
+interface Props {
+  currentUser: UserSession;
+  onOpenTambahKegiatan?: () => void;
+}
+
+export const PerangkatRWSection: React.FC<Props> = ({ currentUser, onOpenTambahKegiatan }) => {
   const [activeTab, setActiveTab] = useState<'semua' | 'PKK' | 'Dasawisma' | 'Jumantik' | 'Posyandu' | 'Siskamling'>('semua');
+  const [kegiatanList, setKegiatanList] = useState<KegiatanRW[]>(() => StorageService.getKegiatanList());
+
+  useEffect(() => {
+    const unsub = StorageService.subscribe(() => {
+      setKegiatanList(StorageService.getKegiatanList());
+    });
+    return () => unsub();
+  }, []);
 
   const filteredKegiatan = activeTab === 'semua' 
-    ? KEGIATAN_DATA 
-    : KEGIATAN_DATA.filter((k) => k.divisi === activeTab);
+    ? kegiatanList 
+    : kegiatanList.filter((k) => k.divisi === activeTab);
+
+  const handleDeleteKegiatan = (id: string, judul: string) => {
+    if (confirm(`Hapus agenda kegiatan "${judul}"?`)) {
+      StorageService.deleteKegiatan(id);
+      triggerGlobalToast({
+        tipe: 'info',
+        judul: 'Kegiatan Dihapus',
+        pesan: `Agenda "${judul}" telah dihapus oleh Admin.`
+      });
+    }
+  };
 
   return (
     <section id="lembaga-rw" className="py-20 bg-slate-50/50 border-b border-slate-100 transition-colors">
@@ -119,33 +146,52 @@ export const PerangkatRWSection: React.FC = () => {
 
         </div>
 
-        {/* Schedule & Activities Table in Pure White */}
+        {/* Schedule & Activities Table in Pure White (Dynamic Admin CRUD) */}
         <div className="card-white-glow rounded-3xl p-6 sm:p-8 mb-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h3 className="text-xl font-bold text-slate-900">
-                Agenda Kegiatan Rutin &amp; Mendatang Perangkat RW
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-900">
+                  Agenda Kegiatan Rutin &amp; Mendatang Perangkat RW
+                </h3>
+                {currentUser.role === 'admin' && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
+                    Mode Admin Aktif
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 mt-1">
                 Jadwal resmi pertemuan, aksi lapangan, dan layanan kesehatan masyarakat.
               </p>
             </div>
 
-            {/* Filter pills */}
-            <div className="flex flex-wrap gap-1.5">
-              {(['semua', 'PKK', 'Dasawisma', 'Jumantik', 'Posyandu', 'Siskamling'] as const).map((tab) => (
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Filter pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {(['semua', 'PKK', 'Dasawisma', 'Jumantik', 'Posyandu', 'Siskamling'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
+                      activeTab === tab
+                        ? 'bg-teal-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Admin Action: Tambah Kegiatan Baru */}
+              {currentUser.role === 'admin' && onOpenTambahKegiatan && (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
-                    activeTab === tab
-                      ? 'bg-teal-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
+                  onClick={onOpenTambahKegiatan}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition-all"
                 >
-                  {tab}
+                  <Plus className="w-3.5 h-3.5" /> Tambah Kegiatan
                 </button>
-              ))}
+              )}
             </div>
           </div>
 
@@ -153,19 +199,34 @@ export const PerangkatRWSection: React.FC = () => {
             {filteredKegiatan.map((item) => (
               <div
                 key={item.id}
-                className="p-5 rounded-2xl bg-white border border-slate-200/80 flex flex-col justify-between hover:border-teal-400 transition-all hover:shadow-sm"
+                className="p-5 rounded-2xl bg-white border border-slate-200/80 flex flex-col justify-between hover:border-teal-400 transition-all hover:shadow-sm relative group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
                       {item.divisi}
                     </span>
-                    <span className={`text-[10px] font-bold ${
-                      item.status === 'Rutin' ? 'text-emerald-600' : 'text-blue-600'
-                    }`}>
-                      ● {item.status}
-                    </span>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold ${
+                        item.status === 'Rutin' ? 'text-emerald-600' : 'text-blue-600'
+                      }`}>
+                        ● {item.status}
+                      </span>
+
+                      {/* Admin Delete Action */}
+                      {currentUser.role === 'admin' && (
+                        <button
+                          onClick={() => handleDeleteKegiatan(item.id, item.judul)}
+                          title="Hapus Kegiatan Ini"
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
+
                   <h4 className="text-sm font-bold text-slate-900 leading-snug">
                     {item.judul}
                   </h4>
