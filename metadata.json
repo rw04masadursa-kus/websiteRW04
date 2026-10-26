@@ -1,0 +1,6 @@
+{
+  "name": "RW 04 Malaka Sari - Portal Warga & Pengaduan Digital",
+  "description": "Portal resmi RW 04 Malaka Sari: informasi kegiatan PKK, Dasawisma, Jumantik, galeri warga, dan sistem pengaduan masyarakat berbasis peta interaktif dengan dashboard analitik dan notifikasi WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
